@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Venom Watch — AI Security Assessor</title>
+
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  VENOM WATCH v4.0 — OTP EMAIL AUTH + SECURITY HARDENED      ║
+  ║  Auth: EmailJS one-time code — no static password            ║
+  ║  XSS: All user input via textContent / sanitize()           ║
+  ║  CSP: Restricts scripts, connections, framing, forms        ║
+  ║  Rate: 5 code requests/hr · 5 wrong OTP attempts → lockout  ║
+  ║  Session: 60-min inactivity auto-logout · sessionStorage     ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://cdn.jsdelivr.net;
+  style-src 'self' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  connect-src 'self' https://api.emailjs.com;
+  img-src 'self' data:;
+  frame-ancestors 'none';
+  form-action 'none';
+  base-uri 'self';
+  object-src 'none';
+">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="venomwatch.css">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     AUTH SCREEN — 3 STEPS:
+     [setup] → first-run config
+     [email] → enter your email
+     [otp]   → enter the code
+════════════════════════════════════════ -->
+<div id="authScreen">
+<div class="auth-card">
+  <div class="auth-eyes">
+    <div class="auth-eye"></div>
+    <div class="auth-eye"></div>
+  </div>
+  <div class="auth-title">VENOM WATCH</div>
+  <div class="auth-tagline">// SECURE ACCESS — EMAIL VERIFICATION</div>
+
+  <!-- STEP 0: First-run setup (shown only if EmailJS not configured) -->
+  <div class="auth-step" id="step-setup">
+    <div class="setup-instructions">
+      <div class="si-title">// One-time setup required</div>
+      <div class="si-step"><span>1.</span>Go to <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer">emailjs.com</a> → sign up free</div>
+      <div class="si-step"><span>2.</span>Add Email Service → connect Gmail/Outlook → copy <b style="color:var(--white)">Service ID</b></div>
+      <div class="si-step"><span>3.</span>Create Email Template → use variables <b style="color:var(--white)">{{otp_code}}</b> and <b style="color:var(--white)">{{to_email}}</b> → copy <b style="color:var(--white)">Template ID</b></div>
+      <div class="si-step"><span>4.</span>Account → General → copy <b style="color:var(--white)">Public Key</b></div>
+      <div class="si-step"><span>5.</span>Enter all three below and all authorized email addresses (one per line)</div>
+    </div>
+    <div class="setup-grid">
+      <div class="setup-field">
+        <label>Service ID</label>
+        <input class="auth-input" id="cfgService" placeholder="service_xxxxxxx" style="margin-bottom:0" />
+      </div>
+      <div class="setup-field">
+        <label>Template ID</label>
+        <input class="auth-input" id="cfgTemplate" placeholder="template_xxxxxxx" style="margin-bottom:0" />
+      </div>
+    </div>
+    <div class="auth-step-label">Public Key</div>
+    <input class="auth-input" id="cfgPublicKey" placeholder="Your EmailJS public key" />
+    <div class="auth-step-label">Authorized Email Addresses</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:1px;">
+      One email per line — all listed addresses can log in
+    </div>
+    <textarea class="auth-input" id="cfgEmail"
+              placeholder="you@yourorg.com&#10;director@yourorg.com&#10;colleague@yourorg.com"
+              rows="4"
+              style="resize:vertical;line-height:1.6;font-size:13px;padding:10px 14px;"></textarea>
+    <div class="auth-msg" id="setup-msg"></div>
+    <button class="auth-btn" id="setupSaveBtn">SAVE CONFIGURATION</button>
+  </div>
+
+  <!-- STEP 1: Email entry -->
+  <div class="auth-step" id="step-email">
+    <div class="auth-step-label">// Enter your authorized email</div>
+    <div class="auth-step-desc">
+      Enter the email address registered for this tool.<br>
+      A 6-digit access code will be sent to you.
+    </div>
+    <input class="auth-input" id="loginEmail" type="email" placeholder="you@yourorg.com" autocomplete="off" />
+    <div class="auth-msg" id="email-msg"></div>
+    <button class="auth-btn" id="sendCodeBtn">SEND ACCESS CODE</button>
+    <div style="margin-top:12px">
+      <button class="auth-footer-link" id="goSetupBtn">⚙ Reconfigure settings</button>
+    &nbsp;&nbsp;
+    <button class="auth-footer-link" id="clearRateBtn" style="color:#666">↺ Clear rate limit</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: OTP entry -->
+  <div class="auth-step" id="step-otp">
+    <div class="auth-step-label">// Enter your access code</div>
+    <div class="auth-step-desc">
+      A 6-digit code was sent to<br>
+      <span id="otpEmailDisplay" style="color:var(--white2);font-family:var(--mono)"></span>
+    </div>
+    <input class="otp-input" id="otpInput" type="text"
+           inputmode="numeric" maxlength="6"
+           placeholder="000000"
+           autocomplete="one-time-code" />
+    <div class="auth-msg" id="otp-msg"></div>
+    <button class="auth-btn" id="verifyOtpBtn">VERIFY CODE</button>
+    <div class="otp-timer" id="otpTimer"></div>
+    <div style="margin-top:10px">
+      <button class="auth-footer-link" id="resendBtn">↺ Resend code</button>
+      &nbsp;&nbsp;
+      <button class="auth-footer-link" id="backToEmailBtn">← Different email</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div id="mainApp" style="display:none">
+
+  <div class="session-bar">
+    <span class="sb-left">// VENOM WATCH — AUTHENTICATED SESSION</span>
+    <div class="sb-right">
+      <span id="sessionTimer" class="sb-timer">60:00</span>
+      <span id="assessCount" style="color:var(--muted)">0/10 this hour</span>
+      <button class="btn-logout" id="logoutBtn">LOGOUT</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="venom-header">
+      <div class="logo-block">
+        <div class="logo-eyes">
+          <div class="eye"></div><div class="eye"></div>
+        </div>
+        <div class="logo-name">VENOM WATCH</div>
+        <div class="logo-sub">// AI Security Intake Assessor · NIST AI RMF 1.0</div>
+      </div>
+      <div class="header-right">
+        <div class="nist-tag">NIST AI RMF 1.0</div>
+        <span class="version-tag">v4.0 — OTP Hardened</span>
+      </div>
+    </div>
+
+    <div class="input-panel">
+      <label class="input-label" for="productInput">// Target — AI product, website, or tool</label>
+      <div class="input-row">
+        <div class="search-wrap">
+          <input class="venom-input" type="text" id="productInput"
+                 placeholder="Type to search AI tools…"
+                 maxlength="120" autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-autocomplete="list"
+                 aria-controls="productDropdown" />
+          <button class="search-clear" id="searchClear" aria-label="Clear product">✕</button>
+          <div class="dropdown" id="productDropdown" role="listbox"></div>
+        </div>
+        <button class="btn-run" id="runBtn">ENGAGE</button>
+      </div>
+      <div class="product-badge" id="productBadge">
+        <span class="pb-name" id="badgeName"></span>
+        <span class="pb-type" id="badgeType"></span>
+        <button class="pb-clear" id="badgeClear" aria-label="Clear selection">✕</button>
+      </div>
+      <label class="input-label" for="emailInput" style="margin-top:8px">// Report delivery email</label>
+      <div class="email-row">
+        <input class="venom-input" type="email" id="emailInput"
+               placeholder="you@yourorg.com" maxlength="254" autocomplete="off" />
+      </div>
+      <div class="rate-limit-banner" id="rateLimitBanner"></div>
+      <div class="progress-strip" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="sec-log" id="secLog"></div>
+
+    <div class="phase-track">
+      <div class="pip" id="pip-1"><div class="pn">01</div><div class="pl">Intake</div></div>
+      <div class="pip" id="pip-2"><div class="pn">02</div><div class="pl">Vulns</div></div>
+      <div class="pip" id="pip-3"><div class="pn">03</div><div class="pl">Breach</div></div>
+      <div class="pip" id="pip-4"><div class="pn">04</div><div class="pl">Privacy</div></div>
+      <div class="pip" id="pip-5"><div class="pn">05</div><div class="pl">AI Risk</div></div>
+      <div class="pip" id="pip-6"><div class="pn">06</div><div class="pl">Supply</div></div>
+      <div class="pip" id="pip-7"><div class="pn">07</div><div class="pl">Report</div></div>
+    </div>
+
+    <div class="output" id="outputArea"></div>
+  </div>
+</div>
+
+<!-- EmailJS SDK (loaded from trusted CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="venomwatch.js"></script>
+</body>
+</html>
