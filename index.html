@@ -36,8 +36,7 @@
 <body>
 
 <!-- ════════════════════════════════════════
-     AUTH SCREEN — 3 STEPS:
-     [setup] → first-run config
+     AUTH SCREEN — 2 STEPS:
      [email] → enter your email
      [otp]   → enter the code
 ════════════════════════════════════════ -->
@@ -50,40 +49,6 @@
   <div class="auth-title">VENOM WATCH</div>
   <div class="auth-tagline">// SECURE ACCESS — EMAIL VERIFICATION</div>
 
-  <!-- STEP 0: First-run setup (shown only if EmailJS not configured) -->
-  <div class="auth-step" id="step-setup">
-    <div class="setup-instructions">
-      <div class="si-title">// One-time setup required</div>
-      <div class="si-step"><span>1.</span>Go to <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer">emailjs.com</a> → sign up free</div>
-      <div class="si-step"><span>2.</span>Add Email Service → connect Gmail/Outlook → copy <b style="color:var(--white)">Service ID</b></div>
-      <div class="si-step"><span>3.</span>Create Email Template → use variables <b style="color:var(--white)">{{otp_code}}</b> and <b style="color:var(--white)">{{to_email}}</b> → copy <b style="color:var(--white)">Template ID</b></div>
-      <div class="si-step"><span>4.</span>Account → General → copy <b style="color:var(--white)">Public Key</b></div>
-      <div class="si-step"><span>5.</span>Enter all three below and all authorized email addresses (one per line)</div>
-    </div>
-    <div class="setup-grid">
-      <div class="setup-field">
-        <label>Service ID</label>
-        <input class="auth-input" id="cfgService" placeholder="service_xxxxxxx" style="margin-bottom:0" />
-      </div>
-      <div class="setup-field">
-        <label>Template ID</label>
-        <input class="auth-input" id="cfgTemplate" placeholder="template_xxxxxxx" style="margin-bottom:0" />
-      </div>
-    </div>
-    <div class="auth-step-label">Public Key</div>
-    <input class="auth-input" id="cfgPublicKey" placeholder="Your EmailJS public key" />
-    <div class="auth-step-label">Authorized Email Addresses</div>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:1px;">
-      One email per line — all listed addresses can log in
-    </div>
-    <textarea class="auth-input" id="cfgEmail"
-              placeholder="you@yourorg.com&#10;director@yourorg.com&#10;colleague@yourorg.com"
-              rows="4"
-              style="resize:vertical;line-height:1.6;font-size:13px;padding:10px 14px;"></textarea>
-    <div class="auth-msg" id="setup-msg"></div>
-    <button class="auth-btn" id="setupSaveBtn">SAVE CONFIGURATION</button>
-  </div>
-
   <!-- STEP 1: Email entry -->
   <div class="auth-step" id="step-email">
     <div class="auth-step-label">// Enter your authorized email</div>
@@ -94,11 +59,6 @@
     <input class="auth-input" id="loginEmail" type="email" placeholder="you@yourorg.com" autocomplete="off" />
     <div class="auth-msg" id="email-msg"></div>
     <button class="auth-btn" id="sendCodeBtn">SEND ACCESS CODE</button>
-    <div style="margin-top:12px">
-      <button class="auth-footer-link" id="goSetupBtn">⚙ Reconfigure settings</button>
-    &nbsp;&nbsp;
-    <button class="auth-footer-link" id="clearRateBtn" style="color:#666">↺ Clear rate limit</button>
-    </div>
   </div>
 
   <!-- STEP 2: OTP entry -->
