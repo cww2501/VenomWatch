@@ -7,8 +7,8 @@
 
 <!--
   ╔══════════════════════════════════════════════════════════════╗
-  ║  VENOM WATCH v4.0 — OTP EMAIL AUTH + SECURITY HARDENED      ║
-  ║  Auth: EmailJS one-time code — no static password            ║
+  ║  VENOM WATCH v5.0 — BACKEND AUTH + CLAUDE PROXY             ║
+  ║  Auth: OTP sent via Resend (backend) — no client secrets     ║
   ║  XSS: All user input via textContent / sanitize()           ║
   ║  CSP: Restricts scripts, connections, framing, forms        ║
   ║  Rate: 5 code requests/hr · 5 wrong OTP attempts → lockout  ║
@@ -17,10 +17,10 @@
 -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' https://cdn.jsdelivr.net;
+  script-src 'self';
   style-src 'self' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com;
-  connect-src 'self' https://api.emailjs.com;
+  connect-src 'self' https://venom-watch.vercel.app;
   img-src 'self' data:;
   frame-ancestors 'none';
   form-action 'none';
@@ -150,7 +150,7 @@
       </div>
       <div class="header-right">
         <div class="nist-tag">NIST AI RMF 1.0</div>
-        <span class="version-tag">v4.0 — OTP Hardened</span>
+        <span class="version-tag">v5.0 — Backend Proxy</span>
       </div>
     </div>
 
@@ -200,8 +200,6 @@
   </div>
 </div>
 
-<!-- EmailJS SDK (loaded from trusted CDN) -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="venomwatch.js"></script>
 </body>
 </html>
