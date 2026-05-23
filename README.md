@@ -13,7 +13,7 @@ AI products before organizational deployment. Built for security engineers.
 - Security hardened against OWASP Top 10
 
 ## Status
-🚧 Active development — Phase 1 migration in progress
+🚧 Active development — Phase 3 migration in progress
 
 ## Standard
 NIST AI 100-1 (AI Risk Management Framework 1.0)
